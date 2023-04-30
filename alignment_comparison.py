@@ -76,9 +76,6 @@ def sort_dict(d):
     return sorted([i for i in d.keys()], reverse=True)
 
 
-# PATH1 = "C:\\Users\\georg\\Downloads\\rho_muscle.fa"
-# PATH2 = "C:\\Users\\georg\\Downloads\\rho_tcoffee.fa"
-
 PATH1 = args.MA1
 PATH2 = args.MA2
 
