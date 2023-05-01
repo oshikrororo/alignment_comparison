@@ -1,6 +1,5 @@
 import bisect
 import argparse
-import json
 import textwrap as _textwrap
 
 
@@ -16,10 +15,17 @@ class LineWrapRawTextHelpFormatter(argparse.RawDescriptionHelpFormatter):
 parser = argparse.ArgumentParser(prog='alignment_comparison.py',
                                  usage='python %(prog)s [MA1] [MA2] [OUT]',
                                  formatter_class=LineWrapRawTextHelpFormatter,
-                                 description='Алгоритм реализует сравнение двух множественных выравниваний.\n'
-                                             'Вывод в файл производится в формате строк вида:\n'
-                                             'X1 X2\n'
-                                             'Где X1 >= 0 - координата колонки в первом выравнивании,\nХ2 >= 0 - координата соответствующей колонки во втором выравнивании.')
+                                 description='Алгоритм реализует сравнение двух множественных выравниваний одних и тех же последовательностей разными алгоритмами.\n'
+                                             'Вывод представляет собой tsv файл из строк вида:\n'
+                                             'F1-L1\tF2-L2 - (шапка таблицы)\n'
+                                             'X1-Y1\tX2-Y2\n'
+                                             'K1-M1\tK2-M2\n'
+                                             '.....\t.....\n'
+                                             'Где X1, K1 > 0 - координаты начал двух соседних блоков в первом выравнивании,\n'
+                                             'X2, K2 > 0 - координаты начал двух соседних блоков во втором выравнивании,\n'
+                                             'Y1, L1 > 0 - координаты концов двух соседних блоков в первом выравнивании,\n'
+                                             'Y2, L2 > 0 - координаты концов двух соседних блоков во втором выравнивании.\n'
+                                 )
 parser.add_argument('MA1',
                     help='Путь до первого множественного выравнивания в формате FASTA')
 parser.add_argument('MA2',
@@ -36,16 +42,12 @@ parser.add_argument('-v',
                          'Выдача производится в формате:\n'
                          'X1-Y1\tK1-L1\t...\n'
                          'X2-Y2\tK2-L2\t...\n'
-                         'Где X1, K1 > 0 - координаты начал двух соседних блоков в первом выравнивании,\n'
-                         'X2, K2 > 0 - координаты начал двух соседних блоков во втором выравнивании,\n'
-                         'Y1, L1 > 0 - координаты концов двух соседних блоков в первом выравнивании,\n'
-                         'Y2, L2 > 0 - координаты концов двух соседних блоков во втором выравнивании.\n'
                          'Если какому-нибудь блоку в одном из выравниваний не соответствует блока в другом, то заместо координат блока во втором выравнивании ставятся прочерки.\n'
-                         'Затем программа выводит в STDDOUT процент выравненных колонок в каждом из двух выравниваний.')
-parser.add_argument('-j',
-                    '--json',
+                    )
+parser.add_argument('-p',
+                    '--percent',
                     action='store_true',
-                    help='Сохранение в файл производится в формате json')
+                    help='Вывод в STDDOUT процент выравненных колонок в каждом из двух выравниваний.')
 
 args = parser.parse_args()
 
@@ -207,7 +209,7 @@ for first, second in enumerate(first_certainty):
         output.append([first, second])
 
 
-def visualise():
+def count_clusters():
     f_clusters = []
     for i, match in enumerate(first_certainty):
         if match != -1:
@@ -233,16 +235,20 @@ def visualise():
                 s_clusters.append([i + 1, i + 1, True])
             else:
                 s_clusters[-1][1] += 1
+    return f_clusters, s_clusters
 
+
+def visualise():
+    f_clusters, s_clusters = count_clusters()
     f_print = []
     s_print = []
     for i in range(len(f_clusters)):
         if f_clusters[i][2]:
             out = f'{f_clusters[i][0]}-{f_clusters[i][1]}'
             f_print.append(out)
-            s_print.append('-'*len(out))
+            s_print.append('-' * len(out))
             out = f'{s_clusters[i][0]}-{s_clusters[i][1]}'
-            f_print.append('-'*len(out))
+            f_print.append('-' * len(out))
             s_print.append(out)
         else:
             f_out = f'{f_clusters[i][0]}-{f_clusters[i][1]}'
@@ -260,13 +266,19 @@ def visualise():
         print('')
 
 
+def save(file):
+    file.write('F1-L1\tF2-L2\n')
+    f_clusters, s_clusters = count_clusters()
+    for i in range(len(f_clusters)):
+        if not f_clusters[i][2]:
+            file.write(f'{f_clusters[i][0]}-{f_clusters[i][1]}\t{s_clusters[i][0]}-{s_clusters[i][1]}\n')
+
+
 if args.visualise is not None:
     visualise()
+if args.percent:
     print(f'Процент выравненных колонок в первом выравнивании - {len(output) / len(first_alignment[sorted_dict[0]]) * 100:.2f}')
     print(f'Процент выравненных колонок во втором выравнивании - {len(output) / len(second_alignment[sorted_dict[0]]) * 100:.2f}')
+
 with open(args.OUT, 'w') as file:
-    if args.json:
-        json.dump(output, file, ensure_ascii=False, indent=4)
-    else:
-        for match in output:
-            file.write(f'{" ".join(list(map(str, match)))}\n')
+    save(file)
