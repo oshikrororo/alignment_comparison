@@ -170,20 +170,20 @@ def mark_alignment(seq, first_frame, second_frame):
             first_certainty.append(-1)
         first_frame = first_frame[shift:]
 
-    if f_symbol(seq, first_frame[-1]) == -1 + subtraction:
+        if f_symbol(seq, first_frame[-1]) == -1 + subtraction:
         if s_symbol(seq, second_frame[-1]) == -1 + subtraction:
             mark_alignment(seq + 1, first_frame, second_frame)
             return
         else:
-            last_gap = bisect.bisect_left(second_alignment, -1 + subtraction)
+            last_gap = bisect.bisect_left(second_alignment[sorted_dict[seq]], -1 + subtraction)
             mark_alignment(seq + 1, first_frame, second_frame[:last_gap])
-            for _ in range(second_frame[last_gap:]):
+            for _ in range(len(second_frame[last_gap:])):
                 second_certainty.append(-1)
             return
     if s_symbol(seq, second_frame[-1]) == -1 + subtraction:
-        last_gap = bisect.bisect_left(first_alignment, -1 + subtraction)
+        last_gap = bisect.bisect_left(first_alignment[sorted_dict[seq]], -1 + subtraction)
         mark_alignment(seq + 1, first_frame[:last_gap], second_frame)
-        for _ in range(first_frame[last_gap:]):
+        for _ in range(len(first_frame[last_gap:])):
             first_certainty.append(-1)
         return
 
