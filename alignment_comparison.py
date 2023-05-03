@@ -170,7 +170,7 @@ def mark_alignment(seq, first_frame, second_frame):
             first_certainty.append(-1)
         first_frame = first_frame[shift:]
 
-        if f_symbol(seq, first_frame[-1]) == -1 + subtraction:
+    if f_symbol(seq, first_frame[-1]) == -1 + subtraction:
         if s_symbol(seq, second_frame[-1]) == -1 + subtraction:
             mark_alignment(seq + 1, first_frame, second_frame)
             return
